@@ -30,7 +30,7 @@ resource topic 'Microsoft.ServiceBus/namespaces/topics@2021-11-01' = {
 }
 
 resource subscriber 'Microsoft.ServiceBus/namespaces/topics/subscriptions@2022-01-01-preview' = {
-  name : 'private-dns-handler'
+  name : 'private-endpoint-write'
   parent: topic
   properties: {
     lockDuration: 'PT5M'
@@ -40,7 +40,7 @@ resource subscriber 'Microsoft.ServiceBus/namespaces/topics/subscriptions@2022-0
 
 
 resource sqlfilter 'Microsoft.ServiceBus/namespaces/topics/subscriptions/rules@2022-01-01-preview' = {
-  name : 'private-dns-rule'
+  name : 'private-endpoint-write-filter'
   parent: subscriber
   properties: {
     filterType: 'SqlFilter'
