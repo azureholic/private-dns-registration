@@ -49,7 +49,10 @@ public class PrivateEndpointWrite
                 {
                     //no customDns config? lets' get the info from the Nic
                     //HDInsight private endpoints show this behavior
-                    log.LogWarning("Create record from Nic is not implemented yet");
+                    var dnsRecordInfo = DnsRecordRetriever.FromNic(azure, privateEndPoint);
+                    var privateZone = await PrivateDnsZone.GetAsync(azure, dnsSubscriptionId, privateZoneResourceGroup, dnsRecordInfo, dnsServiceVnetResourceGroup, dnsServerVnet);
+                    await PrivateDnsZone.UpdateAsync(privateZone, dnsRecordInfo);
+
                 }
                 else
                 {
