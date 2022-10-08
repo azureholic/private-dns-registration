@@ -1,42 +1,74 @@
-using System;
+using Azure.Core;
+using Azure.Identity;
+using Azure.ResourceManager;
+using Azure.ResourceManager.Network;
 using Microsoft.Azure.WebJobs;
-using Microsoft.Azure.WebJobs.Host;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
-using SubscriptionEventHandlers.Model;
+using SubscriptionEventHandlerLib;
+using SubscriptionEventHandlerModels;
+using System;
+using System.Threading.Tasks;
 
-namespace SubscriptionEventHandlers
+namespace SubscriptionEventHandlers;
+public class PrivateEndpointWrite
 {
-    public class PrivateEndpointWrite
+    [FunctionName("PrivateEndpointWrite")]
+    public async Task Run([ServiceBusTrigger("subscription-events", "private-endpoint-write", Connection = "ServicebusConnection")] EventGridMessage message, ILogger log, ExecutionContext context)
     {
-        private readonly ILogger<PrivateEndpointWrite> _logger;
+        //retrieve config
+        var config = Config.Get(context);
+        string dnsSubscriptionId = config["DnsSubscriptionId"];
+        string privateZoneResourceGroup = config["PrivateZoneResourceGroup"];
+        string dnsServiceVnetResourceGroup = config["DnsServiceVnetResourceGroup"];
+        string dnsServerVnet = config["DnsServerVnet"];
 
-        public PrivateEndpointWrite(ILogger<PrivateEndpointWrite> log)
+        //message received
+        log.LogInformation(
+            $"Message Received \n" +
+            "-------------------------------------------------------------------\n" +
+            $"Topic: {message.Topic} \n" +
+            $"Subject: {message.Subject} \n" +
+            $"Resource Provider: {message.Data.ResourceProvider} \n" +
+            "-------------------------------------------------------------------\n"
+            );
+
+        try
         {
-            _logger = log;
+            //log into Azure
+             ArmClient azure = new ArmClient(new DefaultAzureCredential());
+
+
+            if (message.Data.OperationName.ToLower() == "microsoft.network/privateendpoints/write")
+            {
+                var privateEndPointResourceId = new ResourceIdentifier(message.Data.ResourceUri);
+                log.LogInformation("Resource Id " + privateEndPointResourceId);
+                var privateEndPointHandle = azure.GetPrivateEndpointResource(privateEndPointResourceId);
+                var privateEndPoint = await privateEndPointHandle.GetAsync();
+
+                if (privateEndPoint.Value.Data.CustomDnsConfigs.Count == 0)
+                {
+                    //no customDns config? lets' get the info from the Nic
+                    //HDInsight private endpoints show this behavior
+                    log.LogWarning("Create record from Nic is not implemented yet");
+                }
+                else
+                {
+                    //most private endpoints use this
+                    //iterate the configs and add a record for every config
+                    for (int i = 0; i < privateEndPoint.Value.Data.CustomDnsConfigs.Count; i++)
+                    {
+                        var dnsRecordInfo = DnsRecordRetriever.FromCustomDnsConfig(privateEndPoint.Value.Data.CustomDnsConfigs[i]);
+                        var privateZone = await PrivateDnsZone.GetAsync(azure, dnsSubscriptionId, privateZoneResourceGroup, dnsRecordInfo, dnsServiceVnetResourceGroup, dnsServerVnet);
+                        await PrivateDnsZone.UpdateAsync(privateZone, dnsRecordInfo);
+                    }
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            log.LogError(ex.Message);
+            throw;
         }
 
-        public static IConfiguration getConfig(ExecutionContext context)
-        {
-            var config = new ConfigurationBuilder()
-              .SetBasePath(context.FunctionAppDirectory)
-              .AddJsonFile("local.settings.json", optional: true, reloadOnChange: true)
-              .AddEnvironmentVariables()
-              .Build();
-
-            return config;
-        }
-
-        [FunctionName("PrivateEndpointWrite")]
-        public void Run([ServiceBusTrigger("subscription-events", "private-endpoint-write", Connection = "ServicebusConnection")] EventGridMessage message, ILogger log, ExecutionContext context)
-        {
-            var config = getConfig(context);
-            string dnsSubscriptionId = config["DnsSubscriptionId"];
-            string privateZoneResourceGroup = config["PrivateZoneResourceGroup"];
-            string dnsServiceVnetResourceGroup = config["DnsServiceVnetResourceGroup"];
-            string dnsServerVnet = config["DnsServerVnet"];
-
-            _logger.LogInformation($"C# ServiceBus topic trigger function processed message");
-        }
     }
 }
