@@ -1,5 +1,4 @@
-//param servicebusTopicResourceId string = '/subscriptions/0865ebb3-1889-4871-8119-562cc313d111/resourceGroups/rg-demo-dns/providers/Microsoft.ServiceBus/namespaces/subscription-events-tbo2dwwkzqrsu/topics/subscription-events'
-param destinationSubscriptionId string
+param destinationSubscriptionId string = subscription().subscriptionId
 param destinationResourceGroupName string
 param destinationServiceBusNamespaceName string
 
