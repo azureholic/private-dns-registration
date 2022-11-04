@@ -40,7 +40,7 @@ resource eventgridtopic 'Microsoft.EventGrid/systemTopics/eventSubscriptions@202
             type: 'Dynamic'
             name: 'event-source-operation'
             properties: {
-              sourceField: 'data.operation'
+              sourceField: 'data.operationName'
             }
            }
         ]

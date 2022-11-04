@@ -45,7 +45,7 @@ resource sqlfilter 'Microsoft.ServiceBus/namespaces/topics/subscriptions/rules@2
   properties: {
     filterType: 'SqlFilter'
     sqlFilter : {
-      sqlExpression: '1=1'
+      sqlExpression: '"event-source-operation"=\'Microsoft.Network/privateEndpoints/write\''
     }
 
   }
