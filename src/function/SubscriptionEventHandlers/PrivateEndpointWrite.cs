@@ -48,7 +48,7 @@ public class PrivateEndpointWrite
                 if (privateEndPoint.Value.Data.CustomDnsConfigs.Count == 0)
                 {
                     //no customDns config? lets' get the info from the Nic
-                    //HDInsight private endpoints show this behavior
+                    //private endpoints create from a private link service show this behavior
                     var dnsRecordInfo = DnsRecordRetriever.FromNic(azure, privateEndPoint);
                     var privateZone = await PrivateDnsZone.GetAsync(azure, dnsSubscriptionId, privateZoneResourceGroup, dnsRecordInfo, dnsServiceVnetResourceGroup, dnsServerVnet);
                     await PrivateDnsZone.UpdateAsync(privateZone, dnsRecordInfo);
