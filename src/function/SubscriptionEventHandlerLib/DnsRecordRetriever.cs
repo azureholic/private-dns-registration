@@ -40,7 +40,7 @@ namespace SubscriptionEventHandlerLib
             //hardcoded for now, since I only know HDInsight as a service that shows this behavior
             if (privateEndPoint.Value.Data.PrivateLinkServiceConnections[0].PrivateLinkServiceId.ResourceType.Namespace == "Microsoft.HDInsight")
             {
-                dnsRecordInfo.Zone = "privatelink.azurehdinsight.net";
+                dnsRecordInfo.Zone = "azurehdinsight.net";
             }
             else
             {
